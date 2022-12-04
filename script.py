@@ -1,13 +1,10 @@
-# %%
 import util, perceptron, nb, samples
 
-# %%
 DIGIT_DATUM_WIDTH=28
 DIGIT_DATUM_HEIGHT=28
 FACE_DATUM_WIDTH=60
 FACE_DATUM_HEIGHT=70
 
-# %%
 def analysis(classifier, guesses, testLabels, testData, rawTestData, printImage):
   """
   This function is called after learning.
@@ -42,7 +39,6 @@ def analysis(classifier, guesses, testLabels, testData, rawTestData, printImage)
           print(rawTestData[i])
           break
 
-# %%
 def basicFeatureExtractorDigit(datum):
   """
   Returns a set of pixel features indicating whether
@@ -75,7 +71,6 @@ def basicFeatureExtractorFace(datum):
         features[(x,y)] = 0
   return features
 
-# %%
 ITERATIONS = 1
 DATASET = 'digits' # 'digits' or 'faces'
 TRAIN_PERCENT = 10
@@ -83,13 +78,11 @@ TEST_PERCENT = 10
 CLASSIFIER = 'Perceptron' # 'Perceptron' or 'NaiveBayes'
 
 
-# %%
 classifiers = {'Perceptron': perceptron.PerceptronClassifier,
                'NaiveBayes': nb.NaiveBayesClassifier}
 
 features = {'digits': basicFeatureExtractorDigit, 'faces': basicFeatureExtractorFace}
 
-# %%
 DATUM_WIDTH = DIGIT_DATUM_WIDTH if DATASET == 'digits' else FACE_DATUM_WIDTH
 DATUM_HEIGHT = DIGIT_DATUM_HEIGHT if DATASET == 'digits' else FACE_DATUM_HEIGHT
 legalLabels = list(range(10)) if DATASET == 'digits' else list(range(2))
@@ -97,10 +90,8 @@ numTraining = 5000 if DATASET == 'digits' else 451
 numTest = 1000 if DATASET == 'digits' else 150
 getFeatures = features[DATASET]
 
-# %%
 DATUM_WIDTH
 
-# %%
 if(DATASET=="faces"):
     rawTrainingData = samples.loadDataFile("data/facedata/facedatatrain", numTraining,DATUM_WIDTH,DATUM_HEIGHT)
     trainingLabels = samples.loadLabelsFile("data/facedata/facedatatrainlabels", numTraining)
@@ -116,38 +107,28 @@ else:
     rawTestData = samples.loadDataFile("data/digitdata/testimages", numTest,DATUM_WIDTH,DATUM_HEIGHT)
     testLabels = samples.loadLabelsFile("data/digitdata/testlabels", numTest)
 
-# %%
 printImage = util.ImagePrinter(DATUM_WIDTH, DATUM_HEIGHT).printImage
 
-# %%
 printImage
 
-# %%
 trainingData = list(map(getFeatures, rawTrainingData))
 validationData = list(map(getFeatures, rawValidationData))
 testData = list(map(getFeatures, rawTestData))
 print(len(trainingData))
-# %%
 classifier = classifiers[CLASSIFIER](legalLabels, max_iterations=ITERATIONS)
 
-# %%
 import time
 st = time.time()
 classifier.train(trainingData, trainingLabels, validationData, validationLabels)
 print("Training time: %0.3fs" % (time.time() - st))
-# %%
 guesses = classifier.classify(testData)
 
-# %%
 correct = [guesses[i] == testLabels[i] for i in range(len(testLabels))].count(True)
 
-# %%
 print(str(correct), ("correct out of " + str(len(testLabels)) + " (%.1f%%).") % (100.0 * correct / len(testLabels)))
 
-# %%
 analysis(classifier, guesses, testLabels, testData, rawTestData, printImage)
 
-# %%
 
 
 
