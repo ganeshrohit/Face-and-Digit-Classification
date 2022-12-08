@@ -113,7 +113,7 @@ class NaiveBayesClassifier:
             predictions = self.classify(validationData)
             accuracyCount =  [predictions[i] == validationLabels[i] for i in range(len(validationLabels))].count(True)
 
-            print("Performance on validation set for k=%f: (%.1f%%)" % (k, 100.0*accuracyCount/len(validationLabels)))
+            # print("Performance on validation set for k=%f: (%.1f%%)" % (k, 100.0*accuracyCount/len(validationLabels)))
             if accuracyCount > bestAccuracyCount:
                 bestParams = (prior, conditionalProb, k)
                 bestAccuracyCount = accuracyCount

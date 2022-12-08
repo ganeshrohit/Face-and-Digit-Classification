@@ -28,7 +28,7 @@ class Perceptron:
 
 
         for iteration in range(self.max_iterations):
-            print ("Starting iteration ", iteration, "...")
+            # print ("Starting iteration ", iteration, "...")
             for i in range(len(trainingData)):
                 real, pred = trainingLabels[i], self.classify([trainingData[i]])[0]
                 if real != pred:
