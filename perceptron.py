@@ -29,7 +29,7 @@ class Perceptron:
         #Start of the Iterations
         iter = 0
         while iter < self.max_iterations:
-            print ("Iteration number: ", iter," ")
+            # print ("Iteration number: ", iter," ")
 
             for x in range(0,len(trainingData)):
                 i, j = trainingLabels[x], self.classify([trainingData[x]])[0]
@@ -39,7 +39,7 @@ class Perceptron:
                     
                     self.weights[j] -= trainingData[x]
 
-            iter += iter
+            iter += 1
 
     def classify(self, data ):
         """
