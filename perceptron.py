@@ -1,20 +1,22 @@
 import util
 PRINT = True
 
+
 class Perceptron:
-    def __init__( self, labels, max_iterations):
+    def __init__(self, labels, max_iterations):
         self.labels = labels
         self.type = "perceptron"
         self.max_iterations = max_iterations
         self.weights = {}
         for label in labels:
-            self.weights[label] = util.Counter() # this is the data-structure you should use
+            # this is the data-structure you should use
+            self.weights[label] = util.Counter()
 
     def setWeights(self, weights):
         assert len(weights) == len(self.labels)
         self.weights = weights
 
-    def train( self, trainingData, trainingLabels, validationData, validationLabels ):
+    def train(self, trainingData, trainingLabels, validationData, validationLabels):
         """
         The training loop for the perceptron passes through the training data several
         times and updates the weight vector for each label based on classification errors.
@@ -25,23 +27,18 @@ class Perceptron:
         (and thus represents a vector a values).
         """
 
-
-        #Start of the Iterations
         iter = 0
         while iter < self.max_iterations:
-            # print ("Iteration number: ", iter," ")
+            for x in range(0, len(trainingData)):
+                if trainingLabels[x] != self.classify([trainingData[x]])[0]:
+                    self.weights[trainingLabels[x]] += trainingData[x]
 
-            for x in range(0,len(trainingData)):
-                i, j = trainingLabels[x], self.classify([trainingData[x]])[0]
-
-                if i != j:
-                    self.weights[i] += trainingData[x]
-                    
-                    self.weights[j] -= trainingData[x]
+                    self.weights[self.classify([trainingData[x]])[
+                        0]] -= trainingData[x]
 
             iter += 1
 
-    def classify(self, data ):
+    def classify(self, data):
         """
         Classifies each datum as the label that most closely matches the prototype vector
         for that label.  See the project description for details.
