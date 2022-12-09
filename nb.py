@@ -15,6 +15,7 @@
 
 import util
 import math
+import copy
 
 class NaiveBayesClassifier:
     """
@@ -63,62 +64,64 @@ class NaiveBayesClassifier:
         self.legalLabels.
         """
 
-        bestAccuracyCount = -1 # best accuracy so far on validation set
+        # To get all the frequency counts from the training data
+        # Frequency(Count) of each label
+        CountOfEachLabel = util.Counter() 
+        # Count of Each feature with a value of 1 given a label
+        countFeatureVal1 = util.Counter() 
+        # Count of Each feature with a given a label, irrespective of its' value
+        countOfEachFeature = util.Counter()
 
-        # Common training - get all counts from training data
-        # We only do it once - save computation in tuning smoothing parameter
-        commonPrior = util.Counter() # probability over labels
-        commonConditionalProb = util.Counter() # Conditional probability of feature feat being 1
-                                      # indexed by (feat, label)
-        commonCounts = util.Counter() # how many time I have seen feature feat with label y
-                                    # whatever inactive or active
+        for x in range(len(trainingData)):
+            l = trainingLabels[x]
+            CountOfEachLabel[l] += 1
 
-        for i in range(len(trainingData)):
-            datum = trainingData[i]
-            label = trainingLabels[i]
-            commonPrior[label] += 1
-            for feat, value in list(datum.items()):
-                commonCounts[(feat,label)] += 1
-                if value > 0: # assume binary value
-                    commonConditionalProb[(feat, label)] += 1
+            image = trainingData[x]
+            for coordinate, value in list(image.items()):
+                countOfEachFeature[(coordinate,l)] += 1
+                
+                if value > 0:
+                    countFeatureVal1[(coordinate, l)] += 1
 
-        for k in kgrid: # Smoothing parameter tuning loop!
-            prior = util.Counter()
-            conditionalProb = util.Counter()
-            counts = util.Counter()
+        # base accuracy value for the validation data, setting to -infinity
+        baseAccuracyValue = float('-inf')
 
-            # get counts from common training step
-            for key, val in list(commonPrior.items()):
-                prior[key] += val
-            for key, val in list(commonCounts.items()):
-                counts[key] += val
-            for key, val in list(commonConditionalProb.items()):
-                conditionalProb[key] += val
+        for k in kgrid:
 
-            # smoothing:
-            for label in self.legalLabels:
-                for feat in self.features:
-                    conditionalProb[ (feat, label)] +=  k
-                    counts[(feat, label)] +=  2*k # 2 because both value 0 and 1 are smoothed
+            #getting the temporary copies of the frequencies for each k value
+            TempCountOfEachLabel = copy.copy(CountOfEachLabel)
+            TempcountFeatureVal1 = copy.copy(countFeatureVal1)
+            TempcountOfEachFeature = copy.copy(countOfEachFeature)
 
-            # normalizing:
-            prior.normalize()
-            for x, count in list(conditionalProb.items()):
-                conditionalProb[x] = count * 1.0 / counts[x]
+            TempCountOfEachLabel.normalize() # normalize
 
-            self.prior = prior
-            self.conditionalProb = conditionalProb
+            # Smoothing: adding the value of k to both the numerator and denominator in the conditional probability
+            # formula
+            for l in self.legalLabels:
+                for feature in self.features:
+                    TempcountFeatureVal1[ (feature, l)] +=  k
+                    TempcountOfEachFeature[(feature, l)] +=  (k+k)
 
-            # evaluating performance on validation set
-            predictions = self.classify(validationData)
-            accuracyCount =  [predictions[i] == validationLabels[i] for i in range(len(validationLabels))].count(True)
 
-            # print("Performance on validation set for k=%f: (%.1f%%)" % (k, 100.0*accuracyCount/len(validationLabels)))
-            if accuracyCount > bestAccuracyCount:
-                bestParams = (prior, conditionalProb, k)
-                bestAccuracyCount = accuracyCount
-            # end of automatic tuning loop
-        self.prior, self.conditionalProb, self.k = bestParams
+            #Calculating the Conditional Probability
+            for i, counts in list(TempcountFeatureVal1.items()):
+                TempcountFeatureVal1[i] = counts * 1.0 / TempcountOfEachFeature[i]
+
+            self.TempCountOfEachLabel = TempCountOfEachLabel
+            self.TempcountFeatureVal1 = TempcountFeatureVal1
+
+            # Calculating the accuracy on validation data set
+            guesses = self.classify(validationData)
+            cnt = 0
+            for i in range(len(validationLabels)):
+                if guesses[i] == validationLabels[i]:
+                    cnt+=1
+
+            if cnt > baseAccuracyValue:
+                OptimalCases = (TempCountOfEachLabel, TempcountFeatureVal1, k)
+                baseAccuracyValue = cnt
+                
+        self.TempCountOfEachLabel, self.TempcountFeatureVal1, self.k = OptimalCases
 
     def classify(self, testData):
         """
@@ -141,29 +144,17 @@ class NaiveBayesClassifier:
         To get the list of all possible features or labels, use self.features and
         self.legalLabels.
         """
-        logJoint = util.Counter()
+        logOfJointProb = util.Counter()
 
-        for label in self.legalLabels:
-            logJoint[label] = math.log(self.prior[label])
-            for feat, value in list(datum.items()):
-                if value > 0:
-                    logJoint[label] += math.log(self.conditionalProb[feat,label])
+        for l in self.legalLabels:
+            logOfJointProb[l] = math.log(self.TempCountOfEachLabel[l])
+            
+            for feature, count in list(datum.items()):
+
+                if count > 0:
+                    logOfJointProb[l] += math.log(self.TempcountFeatureVal1[feature,l])
                 else:
-                    logJoint[label] += math.log(1-self.conditionalProb[feat,label])
+                    logOfJointProb[l] += math.log(1-self.TempcountFeatureVal1[feature,l])
 
-        return logJoint
+        return logOfJointProb
 
-    def findHighOddsFeatures(self, label1, label2):
-        """
-        Returns the 100 best features for the odds ratio:
-                P(feature=1 | label1)/P(feature=1 | label2)
-        Note: you may find 'self.features' a useful way to loop through all possible features
-        """
-        featuresOdds = []
-
-        for feat in self.features:
-            featuresOdds.append((self.conditionalProb[feat, label1]/self.conditionalProb[feat, label2], feat))
-        featuresOdds.sort()
-        featuresOdds = [feat for val, feat in featuresOdds[-100:]]
-
-        return featuresOdds

@@ -26,14 +26,20 @@ class Perceptron:
         """
 
 
+        #Start of the Iterations
+        iter = 0
+        while iter < self.max_iterations:
+            print ("Iteration number: ", iter," ")
 
-        for iteration in range(self.max_iterations):
-            # print ("Starting iteration ", iteration, "...")
-            for i in range(len(trainingData)):
-                real, pred = trainingLabels[i], self.classify([trainingData[i]])[0]
-                if real != pred:
-                    self.weights[real] += trainingData[i]
-                    self.weights[pred] -= trainingData[i]
+            for x in range(0,len(trainingData)):
+                i, j = trainingLabels[x], self.classify([trainingData[x]])[0]
+
+                if i != j:
+                    self.weights[i] += trainingData[x]
+                    
+                    self.weights[j] -= trainingData[x]
+
+            iter += iter
 
     def classify(self, data ):
         """
@@ -41,17 +47,14 @@ class Perceptron:
         for that label.  See the project description for details.
         Recall that a datum is a util.counter...
         """
-        guesses = []
+        predictions = []
+
         for datum in data:
-            vectors = util.Counter()
-            for l in self.labels:
-                vectors[l] = self.weights[l] * datum
-            guesses.append(vectors.argMax())
-        return guesses
+            array = util.Counter()
 
+            for i in self.labels:
+                array[i] = self.weights[i] * datum
 
-    def findHighWeightFeatures(self, label):
-        """
-        Returns a list of the 100 features with the greatest weight for some label
-        """
-        return self.weights[label].sortedKeys()[:100]
+            predictions.append(array.argMax())
+
+        return predictions
