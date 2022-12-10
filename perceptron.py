@@ -30,11 +30,12 @@ class Perceptron:
         iter = 0
         while iter < self.max_iterations:
             for x in range(0, len(trainingData)):
-                if trainingLabels[x] != self.classify([trainingData[x]])[0]:
-                    self.weights[trainingLabels[x]] += trainingData[x]
-
-                    self.weights[self.classify([trainingData[x]])[
-                        0]] -= trainingData[x]
+                i, j = trainingLabels[x], self.classify([trainingData[x]])[0]
+                
+                if i != j:
+                    self.weights[i] += trainingData[x]
+                    
+                    self.weights[j] -= trainingData[x]
 
             iter += 1
 
